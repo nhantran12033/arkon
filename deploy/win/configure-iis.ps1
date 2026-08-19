@@ -41,7 +41,10 @@ param(
 
     [string]$PhysicalPath      = "C:\inetpub\arkon",
     [string]$MinioPhysicalPath = "C:\inetpub\arkon-files",
-    [string]$ProjectRoot       = (Resolve-Path "$PSScriptRoot\..\..")
+    [string]$ProjectRoot       = (Resolve-Path "$PSScriptRoot\..\.."),
+
+    # Bo qua buoc kiem tra module (dung khi chac chan da cai ma script van bao thieu)
+    [switch]$SkipModuleCheck
 )
 
 $ErrorActionPreference = "Stop"
@@ -55,9 +58,40 @@ Import-Module WebAdministration
 $appcmd = "$env:windir\system32\inetsrv\appcmd.exe"
 
 # --- 0. Kiem tra module da cai chua ----------------------------------------
-$modules = & $appcmd list modules
-if ($modules -notmatch "RewriteModule")           { throw "Chua cai URL Rewrite 2.1." }
-if ($modules -notmatch "ApplicationRequestRouting") { throw "Chua cai ARR 3.0." }
+# LUU Y: appcmd tra ve MANG cac dong. Phai -join thanh MOT chuoi truoc khi so khop,
+# vi voi mang thi "$arr -notmatch 'x'" tra ve MANG phan tu khong khop (luon truthy)
+# chu khong phai $true/$false.
+function Test-IisModule {
+    param([string]$Pattern)
+    $out = (& $appcmd list config -section:system.webServer/globalModules 2>$null) -join "`n"
+    if (-not $out) { $out = (& $appcmd list modules 2>$null) -join "`n" }
+    return [bool]($out -match $Pattern)
+}
+
+$hasRewrite = Test-IisModule 'RewriteModule|rewrite\.dll'
+$hasArr     = Test-IisModule 'ApplicationRequestRouting|requestRouter\.dll'
+
+Write-Host "==> Kiem tra module IIS"
+Write-Host ("    URL Rewrite : {0}" -f $(if ($hasRewrite) { "OK" } else { "THIEU" }))
+Write-Host ("    ARR         : {0}" -f $(if ($hasArr)     { "OK" } else { "THIEU" }))
+
+if ((-not $hasRewrite -or -not $hasArr) -and -not $SkipModuleCheck) {
+    if (-not $hasRewrite) {
+        Write-Warning "Khong thay URL Rewrite. Tai: https://www.iis.net/downloads/microsoft/url-rewrite"
+    }
+    if (-not $hasArr) {
+        Write-Warning "Khong thay ARR. Tai: https://www.iis.net/downloads/microsoft/application-request-routing"
+    }
+    throw @"
+Thieu module IIS (xem canh bao o tren). Cai URL Rewrite TRUOC, ARR SAU, roi mo lai IIS Manager.
+
+Kiem tra thu cong:
+    & "`$env:windir\system32\inetsrv\appcmd.exe" list config -section:system.webServer/globalModules |
+        Select-String "Rewrite|RequestRouter"
+
+Neu chac chan da cai day du ma script van bao thieu, chay lai voi -SkipModuleCheck
+"@
+}
 
 # --- 1. Cau hinh ARR proxy --------------------------------------------------
 # Ten thuoc tinh cua section system.webServer/proxy khac nhau giua cac ban ARR,
