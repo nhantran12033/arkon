@@ -1,0 +1,82 @@
+# ============================================================
+# Arkon — Hạ tầng nền cho deploy IIS trên Windows
+# ============================================================
+# Chỉ chạy Postgres / Redis / MinIO trong Docker.
+# API, 2 worker và Next.js chạy native trên Windows dưới dạng Windows Service,
+# IIS làm reverse proxy phía trước.
+#
+# Khác với docker-compose.yml:
+#   - Không build image backend/frontend
+#   - CÓ publish port ra 127.0.0.1 để tiến trình native kết nối được
+#
+# Chạy:
+#   docker compose -f docker-compose.infra.yml --env-file .env up -d
+# Dừng:
+#   docker compose -f docker-compose.infra.yml down
+#
+# Port khớp với .env:
+#   Postgres 5433 | Redis 6379 | MinIO API 9002 | MinIO Console 9003
+# ============================================================
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: arkon_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-arkon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-arkon_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-arkon}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      # Chỉ bind loopback — không lộ DB ra mạng LAN
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-arkon} -d ${POSTGRES_DB:-arkon}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: arkon_redis
+    restart: always
+    command: >
+      redis-server --save 60 1 --loglevel warning
+      --requirepass ${REDIS_PASSWORD:-arkon_secret}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-arkon_secret} ping | grep PONG || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: arkon_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+      # Cần khi đứng sau reverse proxy IIS ở domain khác (site files.*)
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL:-http://localhost:9003}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "127.0.0.1:9002:9000"
+      - "127.0.0.1:9003:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

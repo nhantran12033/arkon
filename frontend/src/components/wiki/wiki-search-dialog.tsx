@@ -121,7 +121,7 @@ export function WikiSearchDialog({
                 </div>
                 {grouped.get(type)!.map((page) => (
                   <button
-                    key={page.slug}
+                    key={`${page.slug}:${page.scope_type ?? "global"}:${page.scope_id ?? ""}`}
                     onClick={() => navigate(page.slug)}
                     className="w-full flex items-start gap-3 px-4 py-2 hover:bg-accent/50 transition-colors text-left"
                   >

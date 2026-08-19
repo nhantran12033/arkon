@@ -258,7 +258,7 @@ def register_tools(mcp: FastMCP):
         from app.database import async_session_factory
         from app.services import wiki_service
 
-        proj_uuids = [uuid_mod.UUID(p) for p in identity.project_ids] or None
+        proj_uuids = None  # workspace/project scope removed
 
         async with async_session_factory() as session:
             registry = ProviderRegistry(session)
@@ -517,7 +517,7 @@ def register_tools(mcp: FastMCP):
         from app.database import async_session_factory
         from app.services import wiki_service
 
-        proj_uuids = [uuid_mod.UUID(p) for p in identity.project_ids] or None
+        proj_uuids = None  # workspace/project scope removed
 
         async with async_session_factory() as session:
             pages = await wiki_service.list_pages(
