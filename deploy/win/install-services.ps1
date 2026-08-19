@@ -3,11 +3,11 @@
   ========================================
   CHAY BANG POWERSHELL VOI QUYEN ADMINISTRATOR.
 
-      cd D:\Storm12\Arkon\arkon
+      cd C:\Storm12\Deployment\Arkon\arkon
       .\deploy\win\install-services.ps1
 
   Yeu cau: nssm.exe co trong PATH.
-      winget install NSSM.NSSM      (hoac tai tu https://nssm.cc/download)
+      Tai tu https://nssm.cc/download, giai nen, copy win64\nssm.exe vao C:\Windows\System32
 
   Service duoc tao:
       Arkon-API        uvicorn  127.0.0.1:5055
@@ -21,7 +21,8 @@
 [CmdletBinding()]
 param(
     [string]$ProjectRoot = (Resolve-Path "$PSScriptRoot\..\.."),
-    [string]$LogDir      = "D:\Logs\Arkon",
+    [string]$LogDir      = "C:\Logs\Arkon",
+
     # Tai khoan chay service. Mac dinh LocalSystem.
     # Neu can truy cap file share mang, dat lai thanh tai khoan domain.
     [string]$ServiceUser = ""
@@ -34,12 +35,13 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     throw "Script nay phai chay bang PowerShell Administrator."
 }
 if (-not (Get-Command nssm.exe -ErrorAction SilentlyContinue)) {
-    throw "Khong tim thay nssm.exe trong PATH. Cai bang: winget install NSSM.NSSM"
+    throw "Khong tim thay nssm.exe trong PATH. Tai tu https://nssm.cc/download roi copy vao C:\Windows\System32"
 }
 
 $py   = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
 $fe   = Join-Path $ProjectRoot "frontend\.next\standalone"
-$node = (Get-Command node.exe).Source
+$node = (Get-Command node.exe -ErrorAction SilentlyContinue).Source
+if (-not $node) { throw "Khong tim thay node.exe trong PATH. Cai Node.js 22 LTS truoc." }
 
 foreach ($p in @($py, (Join-Path $fe "server.js"))) {
     if (-not (Test-Path $p)) { throw "Thieu '$p'. Chay .\deploy\win\build.ps1 truoc." }
