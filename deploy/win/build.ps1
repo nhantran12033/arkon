@@ -1,27 +1,27 @@
-<#
-  Arkon — Build production trên máy deploy
+﻿<#
+  Arkon - Build production tren may deploy
   =========================================
-  Chạy bằng PowerShell (không cần admin):
+  Chay bang PowerShell (khong can admin):
 
       cd C:\Storm12\Deployment\Arkon\arkon
       .\deploy\win\build.ps1 -PublicUrl "https://192.168.200.52:44380"
 
-  Chạy lại script này mỗi lần deploy code mới (git pull).
-  Sau khi build xong nhớ restart service:  .\deploy\win\restart-services.ps1
+  Chay lai script nay moi lan deploy code moi (git pull).
+  Sau khi build xong nho restart service:  .\deploy\win\restart-services.ps1
 #>
 
 [CmdletBinding()]
 param(
     [string]$ProjectRoot = (Resolve-Path "$PSScriptRoot\..\.."),
 
-    # Địa chỉ public của portal. Giá trị này được NHÚNG CỨNG vào bundle JS lúc build,
-    # đổi IP/port là phải build lại frontend.
+    # Dia chi public cua portal. Gia tri nay duoc NHUNG CUNG vao bundle JS luc build,
+    # doi IP/port la phai build lai frontend.
     [string]$PublicUrl = $env:ARKON_PUBLIC_URL,
 
-    # Bản Python dùng để tạo venv. "3.13" -> py -3.13
+    # Ban Python dung de tao venv. "3.13" -> py -3.13
     [string]$PythonVersion = "3.13",
 
-    # Bỏ qua bước alembic upgrade head (dùng khi DB chưa sẵn sàng)
+    # Bo qua buoc alembic upgrade head (dung khi DB chua san sang)
     [switch]$SkipMigration
 )
 

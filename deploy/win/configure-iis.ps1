@@ -1,5 +1,5 @@
-<#
-  Arkon — Cau hinh IIS (ARR + URL Rewrite) cho reverse proxy, binding HTTPS
+﻿<#
+  Arkon - Cau hinh IIS (ARR + URL Rewrite) cho reverse proxy, binding HTTPS
   =========================================================================
   CHAY BANG POWERSHELL VOI QUYEN ADMINISTRATOR.
 
@@ -71,15 +71,15 @@ function Set-ProxyProp {
             -Filter 'system.webServer/proxy' -Name $Name -Value $Value -ErrorAction Stop
         Write-Host ("    OK   {0} = {1}   ({2})" -f $Name, $Value, $Note)
     } catch {
-        Write-Warning ("    FAIL {0} — chinh tay trong Server Proxy Settings: {1}" -f $Name, $Note)
+        Write-Warning ("    FAIL {0} - chinh tay trong Server Proxy Settings: {1}" -f $Name, $Note)
     }
 }
 
 Write-Host "==> Cau hinh ARR proxy"
 Set-ProxyProp -Name "enabled"                 -Value $true      -Note "Enable proxy"
 Set-ProxyProp -Name "timeout"                 -Value "00:10:00" -Note "Time-out = 600s"
-Set-ProxyProp -Name "responseBufferThreshold" -Value 0          -Note "Response buffer threshold (KB) = 0 — BAT BUOC cho MCP/SSE"
-Set-ProxyProp -Name "preserveHostHeader"      -Value $true      -Note "Preserve original HOST header — BAT BUOC cho MinIO presigned URL"
+Set-ProxyProp -Name "responseBufferThreshold" -Value 0          -Note "Response buffer threshold (KB) = 0 - BAT BUOC cho MCP/SSE"
+Set-ProxyProp -Name "preserveHostHeader"      -Value $true      -Note "Preserve original HOST header - BAT BUOC cho MinIO presigned URL"
 Set-ProxyProp -Name "reverseRewriteHostInResponseHeaders" -Value $false -Note "Tat reverse rewrite host"
 
 # --- 2. Cho phep rewrite ghi de server variable ------------------------------
@@ -139,10 +139,12 @@ function New-ArkonSite {
         $ok = $true
     } catch { }
     if (-not $ok) {
-        # Fallback: gan truc tiep bang netsh
-        & netsh http delete sslcert ipport=0.0.0.0:$SitePort 2>$null | Out-Null
-        & netsh http add sslcert ipport=0.0.0.0:$SitePort `
-            certhash=$CertThumbprint appid="{00112233-4455-6677-8899-AABBCCDDEEFF}" certstorename=MY | Out-Null
+        # Fallback: gan truc tiep bang netsh.
+        # Dung mang tham so + nhay don, tranh PowerShell hieu nham dau { } va dau -
+        $ipport = "ipport=0.0.0.0:$SitePort"
+        $appid  = 'appid={00112233-4455-6677-8899-AABBCCDDEEFF}'
+        & netsh @('http','delete','sslcert',$ipport) 2>$null | Out-Null
+        & netsh @('http','add','sslcert',$ipport,"certhash=$CertThumbprint",$appid,'certstorename=MY') | Out-Null
     }
     Write-Host "    SSL cert da gan cho port $SitePort"
 
@@ -150,7 +152,7 @@ function New-ArkonSite {
     Write-Host "    web.config: $ConfigSource -> $Path"
 }
 
-# App pool dung chung — site chi lam proxy, khong chay code .NET
+# App pool dung chung - site chi lam proxy, khong chay code .NET
 if (-not (Test-Path "IIS:\AppPools\$SiteName")) {
     Write-Host "==> Tao app pool $SiteName"
     New-WebAppPool -Name $SiteName | Out-Null

@@ -1,5 +1,5 @@
-<#
-  Arkon — Cai 4 Windows Service bang NSSM
+﻿<#
+  Arkon - Cai 4 Windows Service bang NSSM
   ========================================
   CHAY BANG POWERSHELL VOI QUYEN ADMINISTRATOR.
 
@@ -15,7 +15,7 @@
       Arkon-Skills     arq SkillWorkerSettings
       Arkon-Frontend   node server.js  127.0.0.1:3000
 
-  Chay lai script nay la an toan — no go service cu roi cai lai.
+  Chay lai script nay la an toan - no go service cu roi cai lai.
 #>
 
 [CmdletBinding()]

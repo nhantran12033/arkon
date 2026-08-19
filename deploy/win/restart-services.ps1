@@ -1,5 +1,5 @@
-<#
-  Arkon — Restart toan bo service sau khi deploy code moi.
+﻿<#
+  Arkon - Restart toan bo service sau khi deploy code moi.
   Chay bang PowerShell Administrator.
 
       cd C:\Storm12\Deployment\Arkon\arkon
