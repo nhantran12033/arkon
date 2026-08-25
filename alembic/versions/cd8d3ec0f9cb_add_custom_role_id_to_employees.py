@@ -65,9 +65,18 @@ def upgrade() -> None:
     op.drop_constraint(op.f('oauth_auth_codes_code_key'), 'oauth_auth_codes', type_='unique')
     op.drop_index(op.f('ix_oauth_auth_codes_code'), table_name='oauth_auth_codes')
     op.create_index(op.f('ix_oauth_auth_codes_code'), 'oauth_auth_codes', ['code'], unique=True)
+    # op.drop_constraint(op.f('oauth_clients_client_id_key'), 'oauth_clients', type_='unique')
+    # op.drop_index(op.f('ix_oauth_clients_client_id'), table_name='oauth_clients')
+    # op.create_index(op.f('ix_oauth_clients_client_id'), 'oauth_clients', ['client_id'], unique=True)
+    op.drop_constraint('oauth_auth_codes_client_id_fkey', 'oauth_auth_codes', type_='foreignkey')
     op.drop_constraint(op.f('oauth_clients_client_id_key'), 'oauth_clients', type_='unique')
     op.drop_index(op.f('ix_oauth_clients_client_id'), table_name='oauth_clients')
     op.create_index(op.f('ix_oauth_clients_client_id'), 'oauth_clients', ['client_id'], unique=True)
+    op.create_foreign_key(
+        'oauth_auth_codes_client_id_fkey',
+        'oauth_auth_codes', 'oauth_clients',
+        ['client_id'], ['client_id']
+    )
     op.drop_index(op.f('ix_source_chunk_embeddings_1024_hnsw'), table_name='source_chunk_embeddings_1024', postgresql_ops={'embedding': 'vector_cosine_ops'}, postgresql_with={'m': '16', 'ef_construction': '64'}, postgresql_using='hnsw')
     op.drop_index(op.f('ix_source_chunk_embeddings_1024_model'), table_name='source_chunk_embeddings_1024')
     op.drop_index(op.f('ix_source_chunk_embeddings_1024_source'), table_name='source_chunk_embeddings_1024')
