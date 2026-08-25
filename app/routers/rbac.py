@@ -50,6 +50,9 @@ class EmployeeCreate(BaseModel):
     password: Optional[str] = None  # Optional on update
     role: str = "employee"  # "admin" or "employee"
     global_role: str = "viewer"  # "viewer", "contributor", "knowledge_manager", "admin"
+    # Optional custom role. When set, it overrides global_role for permissions.
+    # Pass null / omit to clear it and fall back to global_role.
+    custom_role_id: Optional[str] = None
     # All departments the employee belongs to. Empty list is allowed — such a
     # user can only see resources scoped to 'global'.
     department_ids: list[str] = []
@@ -61,6 +64,8 @@ class EmployeeOut(BaseModel):
     email: str
     role: str
     global_role: str
+    custom_role_id: Optional[str] = None
+    custom_role_name: Optional[str] = None
     department_ids: list[str] = []
     department_names: list[str] = []
     is_active: bool
@@ -201,6 +206,8 @@ async def list_employees(
                 email=e.email,
                 role=e.role,
                 global_role=e.global_role,
+                custom_role_id=str(e.custom_role_id) if e.custom_role_id else None,
+                custom_role_name=e.custom_role.name if e.custom_role else None,
                 department_ids=[str(ed.department_id) for ed in e.employee_departments],
                 department_names=[
                     ed.department.name for ed in e.employee_departments if ed.department
@@ -248,6 +255,7 @@ async def create_employee(
         password_hash=hash_password(body.password),
         role=body.role,
         global_role=body.global_role,
+        custom_role_id=uuid.UUID(body.custom_role_id) if body.custom_role_id else None,
     )
     db.add(emp)
     await db.flush()  # need emp.id before adding join rows
@@ -277,6 +285,7 @@ async def update_employee(
     emp.email = body.email
     emp.role = body.role
     emp.global_role = body.global_role
+    emp.custom_role_id = uuid.UUID(body.custom_role_id) if body.custom_role_id else None
     if body.password:
         emp.password_hash = hash_password(body.password)
 

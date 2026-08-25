@@ -27,6 +27,7 @@ type Employee = {
   email: string;
   role: string;
   global_role: string;
+  custom_role_id?: string | null;
   department_ids: string[];
 };
 
@@ -36,8 +37,12 @@ type Props = {
   employee: Employee | null; // null = create mode
   departments: Department[];
   roles?: Role[];
+  /** Custom roles (from /api/roles) selectable as a permission override. */
+  customRoles?: Role[];
   onSaved: () => void;
 };
+
+const NO_CUSTOM_ROLE = "__none__";
 
 export function EmployeeDialog({
   open,
@@ -45,6 +50,7 @@ export function EmployeeDialog({
   employee,
   departments,
   roles = [],
+  customRoles = [],
   onSaved,
 }: Props) {
   const isEdit = !!employee;
@@ -52,6 +58,7 @@ export function EmployeeDialog({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [globalRole, setGlobalRole] = useState("viewer");
+  const [customRoleId, setCustomRoleId] = useState<string>(NO_CUSTOM_ROLE);
   const [deptIds, setDeptIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -105,6 +112,7 @@ export function EmployeeDialog({
       setName(employee.name);
       setEmail(employee.email);
       setGlobalRole(employee.global_role || "viewer");
+      setCustomRoleId(employee.custom_role_id || NO_CUSTOM_ROLE);
       setDeptIds(employee.department_ids ?? []);
       setPassword("");
     } else {
@@ -112,6 +120,7 @@ export function EmployeeDialog({
       setEmail("");
       setPassword("");
       setGlobalRole("viewer");
+      setCustomRoleId(NO_CUSTOM_ROLE);
       setDeptIds(departments[0]?.id ? [departments[0].id] : []);
     }
     setError("");
@@ -128,6 +137,7 @@ export function EmployeeDialog({
         email,
         role: globalRole === "admin" ? "admin" : "employee",
         global_role: globalRole,
+        custom_role_id: customRoleId === NO_CUSTOM_ROLE ? null : customRoleId,
         department_ids: deptIds,
       };
       if (password) body.password = password;
@@ -279,6 +289,25 @@ export function EmployeeDialog({
               </div>
             </div>
           </div>
+
+          {customRoles.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <Label>Custom Role (overrides base role permissions)</Label>
+              <Select value={customRoleId} onValueChange={(v) => v && setCustomRoleId(v)}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CUSTOM_ROLE}>None — use base role</SelectItem>
+                  {customRoles.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {error && (
             <p className="text-destructive text-sm bg-destructive/10 px-3 py-2 rounded-lg">

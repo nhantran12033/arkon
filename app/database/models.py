@@ -657,6 +657,39 @@ class Department(Base):
     )
 
 
+class Role(Base):
+    """Custom RBAC role — a named, reusable set of scoped permissions.
+
+    Assigned to an Employee via Employee.custom_role_id. When present it
+    overrides the fixed `global_role` permission map. System roles
+    (is_system=True) are seeded and cannot be edited or deleted from the UI.
+    Permissions are stored as a JSON array of permission strings drawn from
+    app.services.permissions.ALL_PERMISSIONS.
+    """
+    __tablename__ = "roles"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    permissions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    is_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships. passive_deletes lets the DB-level ON DELETE SET NULL handle
+    # detaching employees when a role is deleted, instead of loading them here.
+    employees: Mapped[list["Employee"]] = relationship(
+        back_populates="custom_role",
+        passive_deletes=True,
+    )
+
+
 class Employee(Base):
     """
     Employee — authenticates via login (JWT) or MCP token.
@@ -681,6 +714,14 @@ class Employee(Base):
     global_role: Mapped[str] = mapped_column(
         String(30), default="viewer",
         comment="viewer, contributor, knowledge_manager, or admin",
+    )
+    # Optional custom role. When set, its permission set OVERRIDES the fixed
+    # global_role map (see permission_engine._get_user_permissions). ON DELETE
+    # SET NULL so removing a role reverts affected users to their global_role.
+    custom_role_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("roles.id", ondelete="SET NULL"),
+        nullable=True,
     )
     # Legacy plaintext column — kept nullable for one release so a rollback is
     # possible. The hashed column below is authoritative; new code never reads
@@ -719,6 +760,12 @@ class Employee(Base):
         secondary="employee_departments",
         back_populates="employees",
         viewonly=True,
+    )
+    # Eager-loaded so the (synchronous) permission engine can read the assigned
+    # role's permissions off an already-populated relationship.
+    custom_role: Mapped[Optional["Role"]] = relationship(
+        back_populates="employees",
+        lazy="selectin",
     )
 
 

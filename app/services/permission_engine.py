@@ -218,11 +218,23 @@ def build_skill_filter(user: Employee, action: str = "read"):
 # ---------------------------------------------------------------------------
 
 def _get_user_permissions(user: Employee) -> set[str]:
-    """Extract effective permissions from user's fixed system role."""
+    """Extract effective permissions for a user.
+
+    Resolution order:
+      1. System admin (role == "admin" or global_role == "admin") → all perms.
+      2. A custom Role assigned via custom_role → that role's permission set.
+      3. Fallback → the fixed global_role static map.
+    """
     from app.services.permissions import ALL_PERMISSIONS, ROLE_PERMISSIONS_MAP
-    
+
     if user.role == "admin" or getattr(user, "global_role", None) == "admin":
         return set(ALL_PERMISSIONS)
+
+    # Custom role overrides the fixed map. `custom_role` is eager-loaded
+    # (lazy="selectin") so this stays synchronous.
+    custom = getattr(user, "custom_role", None)
+    if custom is not None and getattr(custom, "permissions", None):
+        return {p for p in custom.permissions if p in ALL_PERMISSIONS}
 
     g_role = getattr(user, "global_role", "viewer") or "viewer"
     stored = ROLE_PERMISSIONS_MAP.get(g_role, ROLE_PERMISSIONS_MAP["viewer"])

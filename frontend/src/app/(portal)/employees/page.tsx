@@ -18,12 +18,16 @@ export type Employee = {
   email: string;
   role: string;
   global_role: string;
+  custom_role_id?: string | null;
+  custom_role_name?: string | null;
   department_ids: string[];
   department_names: string[];
   is_active: boolean;
   has_token: boolean;
   last_connected?: string;
 };
+
+type CustomRole = { id: string; name: string };
 
 type PaginatedResponse = {
   items: Employee[];
@@ -36,6 +40,7 @@ type PaginatedResponse = {
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const roles = [
     { id: "viewer", name: "Viewer" },
     { id: "contributor", name: "Contributor" },
@@ -72,6 +77,9 @@ export default function EmployeesPage() {
   useEffect(() => {
     loadEmployees();
     api<Department[]>("/api/departments").then(setDepartments).catch(() => {});
+    // Custom roles are optional — the endpoint requires org:roles:read, so
+    // swallow errors for users who can't see roles.
+    api<CustomRole[]>("/api/roles").then(setCustomRoles).catch(() => {});
   }, [loadEmployees]);
 
   const handleCreate = () => {
@@ -127,6 +135,7 @@ export default function EmployeesPage() {
         employee={editEmployee}
         departments={departments}
         roles={roles}
+        customRoles={customRoles}
         onSaved={() => loadEmployees(page, search)}
       />
     </>

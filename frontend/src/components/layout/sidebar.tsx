@@ -50,10 +50,11 @@ const navSections: NavSection[] = [
   {
     id: "organization",
     label: "Organization",
-    requiredPermissions: ["org:departments:read", "org:employees:read"],
+    requiredPermissions: ["org:departments:read", "org:employees:read", "org:roles:read"],
     items: [
       { label: "Departments", href: "/departments", icon: "domain", requiredPermissions: ["org:departments:read"] },
       { label: "Employees", href: "/employees", icon: "group", requiredPermissions: ["org:employees:read"] },
+      { label: "Roles", href: "/roles", icon: "shield_person", requiredPermissions: ["org:roles:read"] },
     ],
   },
   {
