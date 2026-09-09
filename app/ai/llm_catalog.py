@@ -22,7 +22,7 @@ from typing import Optional
 @dataclass(frozen=True)
 class LLMModelSpec:
     id: str                          # canonical "<provider>/<model_id>"
-    provider: str                    # matches ProviderType: "openai" | "google" | "anthropic"
+    provider: str                    # matches ProviderType: e.g. "openai", "groq", "google", "anthropic"
     model_id: str                    # ID sent to the provider API
     context_window_tokens: int       # total context window (input + output)
     max_output_tokens: int           # max output tokens per request
@@ -175,6 +175,23 @@ LLM_CATALOG: dict[str, LLMModelSpec] = {
         label="GPT-4o Mini (128k)",
         cost_per_1m_input_tokens=0.15,
         cost_per_1m_output_tokens=0.60,
+    ),
+    # --- Groq ---
+    "groq/qwen/qwen3.8-27b": LLMModelSpec(
+        id="groq/qwen/qwen3.8-27b",
+        provider="groq",
+        model_id="qwen/qwen3.8-27b",
+        context_window_tokens=131_042,
+        max_output_tokens=16_384,
+        supports_tools=True,
+        supports_vision=True,
+        label="Qwen 3.8 27B (Groq, 131k)",
+        cost_per_1m_input_tokens=0.80,
+        cost_per_1m_output_tokens=4.00,
+        notes=(
+            "Groq preview model with tool use, reasoning, and vision. "
+            "Uses Groq's OpenAI-compatible API automatically."
+        ),
     ),
 }
 

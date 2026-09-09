@@ -1,7 +1,7 @@
 """
 Abstract base classes for AI providers.
 
-Every provider (Google, OpenAI, Anthropic, Ollama…) implements these
+Every provider (Google, OpenAI, Groq, Anthropic, Ollama…) implements these
 interfaces so the rest of the codebase never imports a specific SDK.
 """
 
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 class ProviderType(str, Enum):
     GOOGLE = "google"
     OPENAI = "openai"
+    GROQ = "groq"
     ANTHROPIC = "anthropic"
     OLLAMA = "ollama"
     VOYAGE = "voyage"

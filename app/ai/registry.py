@@ -57,6 +57,10 @@ def _get_llm_class(provider: ProviderType) -> type[LLMProvider]:
     elif provider == ProviderType.OPENAI:
         from app.ai.providers.openai_provider import OpenAILLM
         return OpenAILLM
+    elif provider == ProviderType.GROQ:
+        # Groq exposes an OpenAI-compatible Chat Completions API.
+        from app.ai.providers.openai_provider import OpenAILLM
+        return OpenAILLM
     elif provider == ProviderType.ANTHROPIC:
         from app.ai.providers.anthropic_provider import AnthropicLLM
         return AnthropicLLM
@@ -268,6 +272,11 @@ class ProviderRegistry:
 
         api_key = await svc.get("llm_api_key") or ""
         base_url = await svc.get("llm_base_url")
+        # Groq implements the OpenAI-compatible API, but requires its own
+        # endpoint. Keep an explicitly configured endpoint as an override for
+        # proxies or compatible gateways.
+        if spec.provider == ProviderType.GROQ.value and not base_url:
+            base_url = "https://api.groq.com/openai/v1"
 
         return ProviderConfig(
             provider=ProviderType(spec.provider),
@@ -309,6 +318,7 @@ class ProviderRegistry:
 _PROVIDER_LABELS = {
     "google": "Google Gemini",
     "openai": "OpenAI",
+    "groq": "Groq",
     "anthropic": "Anthropic",
     "ollama": "Ollama",
     "voyage": "Voyage AI",
