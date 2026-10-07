@@ -56,7 +56,10 @@ services:
       retries: 10
 
   minio:
-    image: minio/minio:latest
+    build:
+      context: ./docker/minio
+    image: arkon-minio:RELEASE.2025-09-07T16-13-09Z
+    pull_policy: build
     container_name: arkon_minio
     restart: always
     command: server /data --console-address ":9001"
@@ -71,7 +74,7 @@ services:
       - "127.0.0.1:9002:9000"
       - "127.0.0.1:9003:9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:9000/minio/health/ready"]
       interval: 10s
       timeout: 5s
       retries: 10
